@@ -9,6 +9,7 @@ import {
   CreateWorkPage,
   ContractDetailsPage,
 } from '@/features/seeker';
+import { FurnisherDashboard } from '@/features/furnisher';
 import './App.css';
 
 // Create Material-UI theme
@@ -34,14 +35,6 @@ const theme = createTheme({
     ].join(','),
   },
 });
-
-// Placeholder dashboard components for Furnisher and Platform (Phase 4 & 5)
-const FurnisherDashboard = () => (
-  <div>
-    <h1>Furnisher Dashboard</h1>
-    <p>Phase 4: Browse work, place bids, complete tasks</p>
-  </div>
-);
 
 const PlatformDashboard = () => (
   <div>
