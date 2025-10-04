@@ -10,7 +10,7 @@ export const getGlobalConfig = (): GlobalConfig => {
   const platformKey = import.meta.env.VITE_PLATFORM_KEY as PubKeyHex;
 
   const baseConfig = {
-    minAllowableBid: 1000,
+    minAllowableBid: 1,
     escrowServiceFeeBasisPoints: 250, // 2.5%
     platformAuthorizationRequired: true,
     escrowMustBeFullyDecisive: true,

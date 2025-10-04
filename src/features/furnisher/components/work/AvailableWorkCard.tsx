@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import type { EscrowTX } from '@/types/blockchain.types';
 import { ContractStatusBadge } from '@/features/seeker/components/contracts/ContractStatusBadge';
+import { ContractTypeBadge } from '@/features/shared/components/ContractTypeBadge';
 import { formatSatoshis, formatDate, extractContractTitle, extractContractDescription } from '@/utils/formatting';
 import { isDeadlineApproaching, isDeadlinePassed } from '@/features/seeker/utils/contractHelpers';
 import { getRealBidsCount } from '@/features/seeker/utils/bidHelpers';
@@ -74,8 +75,11 @@ export const AvailableWorkCard: React.FC<AvailableWorkCardProps> = ({
       )}
 
       <CardContent sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1 }}>
-          <ContractStatusBadge status={contract.record.status} />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <ContractStatusBadge status={contract.record.status} />
+            <ContractTypeBadge contractType={contract.record.contractType} />
+          </Box>
           {bidsCount > 0 && (
             <Chip
               icon={<Gavel />}

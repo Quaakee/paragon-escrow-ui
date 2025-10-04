@@ -16,7 +16,7 @@ export const DEFAULT_FILTERS: ContractFilters = {
 /**
  * Minimum bounty amount in satoshis (1000 sats)
  */
-export const MIN_BOUNTY = 1000;
+export const MIN_BOUNTY = 1;
 
 /**
  * Maximum bounty amount in satoshis (1 BSV = 100M sats)

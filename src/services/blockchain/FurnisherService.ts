@@ -66,6 +66,7 @@ export class FurnisherService {
    * @param bidAmount - Bid amount in satoshis
    * @param bond - Optional bond amount in satoshis
    * @param timeRequired - Time required to complete work (seconds)
+   * @throws Error if TYPE_BOUNTY contract bid amount doesn't match bounty value
    */
   public async placeBid(
     escrow: EscrowTX,
@@ -75,11 +76,37 @@ export class FurnisherService {
     timeRequired?: number
   ): Promise<void> {
     this.ensureInitialized();
+
+    // CRITICAL VALIDATION: For BOUNTY contracts, bid amount MUST equal the bounty value
+    const isBountyContract = escrow.record.contractType === 'bounty';
+    if (isBountyContract && bidAmount !== escrow.satoshis) {
+      throw new Error(
+        `Invalid bid amount for BOUNTY contract. ` +
+        `Bid amount must be exactly ${escrow.satoshis} satoshis (the fixed bounty amount), ` +
+        `but received ${bidAmount} satoshis. ` +
+        `BOUNTY contracts have a fixed reward that cannot be changed.`
+      );
+    }
+
+    // Validate minimum bid for BID contracts
+    if (!isBountyContract && bidAmount < escrow.record.minAllowableBid) {
+      throw new Error(
+        `Bid amount ${bidAmount} is below the minimum allowable bid of ${escrow.record.minAllowableBid} satoshis.`
+      );
+    }
+
+    // CRITICAL: Convert timeRequired from duration (seconds) to future Unix timestamp
+    // The contract expects a Unix timestamp (> 500000000), not a duration
+    // This matches SimpleBidFlow.test.ts: Math.floor(Date.now() / 1000) + duration
+    const timeRequiredTimestamp = timeRequired
+      ? Math.floor(Date.now() / 1000) + timeRequired
+      : Math.floor(Date.now() / 1000) + 86400; // Default 1 day from now
+
     await this.furnisher!.placeBid(
       escrow,
       bidAmount,
       plans,
-      timeRequired ?? 0,
+      timeRequiredTimestamp,
       bond ?? 0
     );
   }

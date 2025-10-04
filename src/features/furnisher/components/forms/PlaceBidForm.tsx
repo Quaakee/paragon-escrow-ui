@@ -15,15 +15,17 @@ import {
   CircularProgress,
   InputAdornment,
   Grid,
+  Paper,
 } from '@mui/material';
 import { usePlaceBid } from '../../hooks/usePlaceBid';
 import {
-  placeBidFormSchema,
+  createPlaceBidFormSchema,
   type PlaceBidFormSchema,
 } from './PlaceBidFormSchema';
 import { DEFAULT_BID_AMOUNT, DEFAULT_TIME_REQUIRED, SECONDS_PER_DAY } from '../../constants';
 import { formatSatoshis, parseSatoshis } from '@/utils/formatting';
 import type { EscrowTX } from '@/types/blockchain.types';
+import { ContractTypeBadge } from '@/features/shared/components/ContractTypeBadge';
 
 interface PlaceBidFormProps {
   contract: EscrowTX;
@@ -37,7 +39,11 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
   onCancel,
 }) => {
   const placeBidMutation = usePlaceBid();
-  const [bidAmountInput, setBidAmountInput] = useState(DEFAULT_BID_AMOUNT.toString());
+
+  // For BOUNTY contracts, bid amount MUST equal the bounty value
+  const isBountyContract = contract.record.contractType === 'bounty';
+  const requiredBidAmount = isBountyContract ? contract.satoshis : DEFAULT_BID_AMOUNT;
+  const [bidAmountInput, setBidAmountInput] = useState(requiredBidAmount.toString());
 
   const {
     control,
@@ -46,21 +52,39 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
     setValue,
     watch,
   } = useForm<PlaceBidFormSchema>({
-    resolver: zodResolver(placeBidFormSchema),
+    resolver: zodResolver(createPlaceBidFormSchema(contract)),
     defaultValues: {
-      bidAmount: DEFAULT_BID_AMOUNT,
+      bidAmount: requiredBidAmount,
       plans: '',
       bond: 0,
       timeRequired: DEFAULT_TIME_REQUIRED,
     },
   });
-
+  
   const bondRequired = contract.record.furnisherBondingMode === 'required';
   const bondOptional = contract.record.furnisherBondingMode === 'optional';
   const showBondField = bondRequired || bondOptional;
 
   const onSubmit = async (data: PlaceBidFormSchema) => {
+    // Prevent double submission while mutation is in progress
+    if (placeBidMutation.isPending) {
+      console.log('⏳ Bid submission already in progress, ignoring duplicate submit');
+      return;
+    }
+
     try {
+      console.log('🔍 CONTRACT DATA BEING PASSED:', {
+        txid: contract.record.txid,
+        outputIndex: contract.record.outputIndex,
+        satoshis: contract.satoshis,
+        hasBeef: !!contract.beef,
+        beefLength: contract.beef?.length,
+        hasScript: !!contract.script,
+        scriptLength: contract.script?.length,
+        hasContract: !!contract.contract,
+        fullContract: contract
+      });
+
       await placeBidMutation.mutateAsync({
         contract,
         bidData: data,
@@ -70,6 +94,7 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
       console.error('Failed to place bid:', error);
     }
   };
+  
 
   const handleBidAmountChange = (value: string) => {
     setBidAmountInput(value);
@@ -94,9 +119,31 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
       onSubmit={handleSubmit(onSubmit)}
       sx={{ maxWidth: 600, mx: 'auto' }}
     >
-      <Typography variant="h6" gutterBottom>
-        Place Bid
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Typography variant="h6">
+          Place Bid
+        </Typography>
+        <ContractTypeBadge contractType={contract.record.contractType} size="medium" />
+      </Box>
+
+      {isBountyContract && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight="bold">
+            This is a BOUNTY contract with a fixed reward of {formatSatoshis(contract.satoshis)}.
+          </Typography>
+          <Typography variant="body2">
+            The bid amount is locked and cannot be changed. You will receive exactly {formatSatoshis(contract.satoshis)} upon successful completion.
+          </Typography>
+        </Alert>
+      )}
+
+      {!isBountyContract && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="body2">
+            This is a BID contract. You can propose your desired payment amount (minimum: {formatSatoshis(contract.record.minAllowableBid)}).
+          </Typography>
+        </Alert>
+      )}
 
       {placeBidMutation.isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -114,11 +161,14 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
             value={bidAmountInput}
             onChange={(e) => handleBidAmountChange(e.target.value)}
             error={!!errors.bidAmount}
+            disabled={isBountyContract}
             helperText={
               errors.bidAmount?.message ||
-              `Preview: ${formatSatoshis(parseSatoshis(bidAmountInput))} | Min: ${formatSatoshis(contract.record.minAllowableBid)}`
+              (isBountyContract
+                ? `Fixed bounty amount: ${formatSatoshis(contract.satoshis)}`
+                : `Preview: ${formatSatoshis(parseSatoshis(bidAmountInput))} | Min: ${formatSatoshis(contract.record.minAllowableBid)}`)
             }
-            placeholder="Enter amount in satoshis or BSV"
+            placeholder={isBountyContract ? 'Fixed bounty amount' : 'Enter amount in satoshis or BSV'}
             slotProps={{
               input: {
                 endAdornment: (
