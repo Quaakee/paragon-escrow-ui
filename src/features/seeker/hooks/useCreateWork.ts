@@ -21,7 +21,11 @@ export const useCreateWork = () => {
       // 1. Transaction creation with proper locking script
       // 2. Wallet action creation (BRC-100 compliance)
       // 3. Broadcasting to overlay network via TopicManager
-      await seekerService.createWork(data.description, deadline, data.bounty);
+      await seekerService.createWork(
+        data.description,
+        deadline,
+        data.bounty
+      );
     },
     onSuccess: () => {
       // Invalidate contracts query to refresh the list
