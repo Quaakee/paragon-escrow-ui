@@ -24,7 +24,8 @@ export const useCreateWork = () => {
       await seekerService.createWork(
         data.description,
         deadline,
-        data.bounty
+        data.bounty,
+        data.contractType
       );
     },
     onSuccess: () => {

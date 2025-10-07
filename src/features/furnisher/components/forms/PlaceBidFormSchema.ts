@@ -25,14 +25,14 @@ export const createPlaceBidFormSchema = (contract: EscrowTX) => {
         (val) => {
           if (isBountyContract) {
             // For BOUNTY contracts, bid amount MUST equal the bounty amount
-            return val === bountyAmount;
+            return val >= bountyAmount;
           }
           // For BID contracts, bid amount must meet the minimum allowable bid
           return val >= minAllowableBid;
         },
         {
           message: isBountyContract
-            ? `For BOUNTY contracts, bid amount must be exactly ${bountyAmount} satoshis`
+            ? `For BOUNTY contracts, bid amount must be greater than or equal to ${bountyAmount} satoshis`
             : `Bid must be at least ${minAllowableBid} satoshis (minimum allowable bid for this contract)`,
         }
       ),

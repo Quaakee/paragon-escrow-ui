@@ -168,7 +168,7 @@ export const PlaceBidForm: React.FC<PlaceBidFormProps> = ({
                 ? `Fixed bounty amount: ${formatSatoshis(contract.satoshis)}`
                 : `Preview: ${formatSatoshis(parseSatoshis(bidAmountInput))} | Min: ${formatSatoshis(contract.record.minAllowableBid)}`)
             }
-            placeholder={isBountyContract ? 'Fixed bounty amount' : 'Enter amount in satoshis or BSV'}
+            placeholder={isBountyContract ? 'Fixed bounty amount' : 'Enter amount in satoshis'}
             slotProps={{
               input: {
                 endAdornment: (

@@ -15,13 +15,6 @@ import {
   CircularProgress,
   InputAdornment,
   Grid,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  FormControl,
-  FormLabel,
-  FormHelperText,
-  Paper,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -45,7 +38,6 @@ export const CreateWorkForm: React.FC<CreateWorkFormProps> = ({
 }) => {
   const createWorkMutation = useCreateWork();
   const [bountyInput, setBountyInput] = useState(DEFAULT_BOUNTY.toString());
-  const [contractType, setContractType] = useState<'bid' | 'bounty'>('bounty');
 
   const {
     control,
@@ -57,7 +49,6 @@ export const CreateWorkForm: React.FC<CreateWorkFormProps> = ({
     resolver: zodResolver(createWorkFormSchema),
     defaultValues: {
       description: '',
-      contractType: 'bounty',
       bounty: DEFAULT_BOUNTY,
       deadline: new Date(
         Date.now() + DEFAULT_DEADLINE_DAYS * 24 * 60 * 60 * 1000
@@ -65,32 +56,21 @@ export const CreateWorkForm: React.FC<CreateWorkFormProps> = ({
     },
   });
 
+  const currentBounty = watch('bounty');
+  const contractType = currentBounty === 1 ? 'bid' : 'bounty';
+
   const onSubmit = async (data: CreateWorkFormSchema) => {
     try {
-      // For BID contracts, set bounty to 1 satoshi (furnishers name their price)
-      const actualBounty = data.contractType === 'bid' ? 1 : data.bounty;
+      // Contract type is auto-determined: 1 sat = bid, >1 sat = bounty
+      const contractType = data.bounty === 1 ? 'bid' : 'bounty';
       await createWorkMutation.mutateAsync({
         ...data,
-        bounty: actualBounty,
+        contractType,
       });
       onSuccess?.();
     } catch (error) {
       // Error is handled by React Query
       console.error('Failed to create work:', error);
-    }
-  };
-
-  const handleContractTypeChange = (type: 'bid' | 'bounty') => {
-    setContractType(type);
-    setValue('contractType', type);
-
-    // Update bounty field based on contract type
-    if (type === 'bid') {
-      setBountyInput('1');
-      setValue('bounty', 1);
-    } else {
-      setBountyInput(DEFAULT_BOUNTY.toString());
-      setValue('bounty', DEFAULT_BOUNTY);
     }
   };
 
@@ -121,52 +101,15 @@ export const CreateWorkForm: React.FC<CreateWorkFormProps> = ({
 
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <Controller
-              name="contractType"
-              control={control}
-              render={({ field }) => (
-                <FormControl component="fieldset" error={!!errors.contractType}>
-                  <FormLabel component="legend">Contract Type</FormLabel>
-                  <RadioGroup
-                    row
-                    value={field.value}
-                    onChange={(e) => handleContractTypeChange(e.target.value as 'bid' | 'bounty')}
-                  >
-                    <FormControlLabel
-                      value="bounty"
-                      control={<Radio />}
-                      label={
-                        <Box>
-                          <Typography variant="body1" fontWeight="bold">
-                            Bounty Contract
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Fixed reward amount - furnishers compete to complete the work for your set bounty
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    <FormControlLabel
-                      value="bid"
-                      control={<Radio />}
-                      label={
-                        <Box>
-                          <Typography variant="body1" fontWeight="bold">
-                            Bid Contract
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Furnishers propose their own prices - you choose the best bid
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </RadioGroup>
-                  {errors.contractType && (
-                    <FormHelperText>{errors.contractType.message}</FormHelperText>
-                  )}
-                </FormControl>
-              )}
-            />
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Contract Type: {contractType === 'bid' ? 'Bid Contract' : 'Bounty Contract'}</strong>
+                <br />
+                {contractType === 'bid'
+                  ? 'Set bounty to 1 satoshi for BID contracts - furnishers will propose their own prices and you choose the best bid.'
+                  : 'Set bounty greater than 1 satoshi for BOUNTY contracts - furnishers compete to complete the work for your fixed reward amount.'}
+              </Typography>
+            </Alert>
           </Grid>
 
           <Grid size={{ xs: 12 }}>
@@ -193,19 +136,18 @@ export const CreateWorkForm: React.FC<CreateWorkFormProps> = ({
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              label={contractType === 'bounty' ? 'Bounty Amount' : 'Initial Amount (1 sat)'}
+              label="Bounty Amount"
               fullWidth
               value={bountyInput}
               onChange={(e) => handleBountyChange(e.target.value)}
               error={!!errors.bounty}
-              disabled={contractType === 'bid'}
               helperText={
                 errors.bounty?.message ||
                 (contractType === 'bid'
-                  ? 'BID contracts start at 1 satoshi - furnishers will propose their prices'
-                  : `Preview: ${formatSatoshis(parseSatoshis(bountyInput))}`)
+                  ? '1 satoshi = BID contract (furnishers propose their prices). Enter a higher amount for a BOUNTY contract.'
+                  : `Preview: ${formatSatoshis(parseSatoshis(bountyInput))} - BOUNTY contract (fixed reward)`)
               }
-              placeholder={contractType === 'bid' ? 'Fixed at 1 satoshi' : 'Enter amount in satoshis or BSV'}
+              placeholder="Enter amount in satoshis"
               slotProps={{
                 input: {
                   endAdornment: (

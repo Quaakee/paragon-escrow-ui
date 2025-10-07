@@ -56,14 +56,16 @@ export class SeekerService {
    * @param description - Description of the work required
    * @param deadline - Unix timestamp for work completion deadline
    * @param bounty - Bounty amount in satoshis
+   * @param contractType - Contract type ('bid' or 'bounty')
    */
   public async createWork(
     description: string,
     deadline: number,
-    bounty: number
+    bounty: number,
+    contractType: 'bid' | 'bounty'
   ): Promise<void> {
     this.ensureInitialized();
-    await this.seeker!.seek(description, deadline, bounty);
+    await this.seeker!.seek(description, deadline, bounty, contractType);
   }
 
   /**

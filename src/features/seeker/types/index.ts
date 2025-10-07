@@ -12,6 +12,7 @@ export interface CreateWorkFormData {
   description: string;
   bounty: number; // satoshis
   deadline: Date;
+  contractType: 'bid' | 'bounty';
 }
 
 /**

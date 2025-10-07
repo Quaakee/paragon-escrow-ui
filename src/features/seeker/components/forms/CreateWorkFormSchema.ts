@@ -19,10 +19,6 @@ export const createWorkFormSchema = z.object({
       { message: 'Work description cannot be empty' }
     ),
 
-  contractType: z.enum(['bid', 'bounty'], {
-    required_error: 'Please select a contract type',
-  }),
-
   bounty: z
     .number()
     .int('Bounty must be a whole number')

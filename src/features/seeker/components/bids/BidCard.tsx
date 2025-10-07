@@ -107,7 +107,7 @@ export const BidCard: React.FC<BidCardProps> = ({
               Estimated Time
             </Typography>
             <Typography variant="body2">
-              {Math.floor(bid.timeRequired / 3600)} hours
+              {Math.floor((bid.timeRequired - bid.timeOfBid) / 3600)} hours
             </Typography>
           </Box>
         </Box>
