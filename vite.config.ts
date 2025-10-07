@@ -26,6 +26,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['.ngrok-free.dev'],
     port: 3000,
   },
   build: {
